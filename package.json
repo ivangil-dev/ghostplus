@@ -1,0 +1,26 @@
+{
+    "name": "ghostplus",
+    "version": "0.0.1",
+    "description": "Superpoderes para Ghost Blog. Mejora y personaliza tu blog con funciones adicionales",
+    "main": "app.js",
+    "scripts": {
+        "start": "pm2 start production.config.json --env production",
+        "test": "jest",
+        "dev": "nodemon app.js"
+    },
+    "author": {
+        "name": "Ivan Gil B.",
+        "email": "soporte@ivangil.es",
+        "url": "https://ivangil.es"
+    },
+    "docs": "https://github.com/ivangil/ghostplus",
+    "license": "GNU v3.0",
+    "dependencies":{},
+    "devDependencies": {
+        "@babel/core": "^7.21.4",
+        "@babel/preset-env": "^7.21.4",
+        "babel-jest": "^29.5.0",
+        "jest": "^26.6.3",
+        "nodemon": "^2.0.7"
+    }
+}
