@@ -82,3 +82,5 @@ const
                 .use(poderes.routes()).use(poderes.allowedMethods())
                 .listen(puerto, () => utilidades.inicioApp(entorno, puerto))
                 .on('error', (e) => {utilidades.errorApp(e); process.exit(0)})
+
+    module.exports = app;
