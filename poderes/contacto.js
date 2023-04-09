@@ -3,7 +3,7 @@ const
   axios       = require('axios'),
   validador   = require('validator'),
   plantilla   = require('../plantillas/emails/contacto'),
-  registro    = require('./registros');
+  registro    = require('../funciones/registros');
 
   function crearTransporte() {
     return nodemailer.createTransport({
