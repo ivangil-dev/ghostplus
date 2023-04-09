@@ -18,9 +18,9 @@ const
     };
     return { MongoClient: jest.fn(() => mClient) };
   });
-  jest.mock("./instagram", () => {
+  jest.mock("../poderes/instagram", () => {
     return {
-      extraerDatos: jest.requireActual("./instagram").extraerDatos,
+      extraerDatos: jest.requireActual("../poderes/instagram").extraerDatos,
       getAccessToken: jest.fn(),
     };
   });
