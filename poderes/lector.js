@@ -21,7 +21,7 @@ texto_a_ssml = texto => {
 dividir_ssml = (ssml, caracteres) => {
     const opciones = {
         // MIN length of a single batch of split text
-        softLimit: caracteres || 2000,
+        softLimit: caracteres || 1500,
         // MAX length of a single batch of split text
         hardLimit: caracteres || 2000,
         // Set of extra split characters (Optional property)
@@ -31,7 +31,7 @@ dividir_ssml = (ssml, caracteres) => {
     try {
         pollySSMLSplit.configure(opciones);
         const partes_SSML = pollySSMLSplit.split(ssml);
-    if (!partes_SSML || !partes_SSML.length) throw new Error('No hay fragmentos SSML.');
+    if (!partes_SSML || !partes_SSML.length) return [];
   
     // Polly SSML split seems to sometimes return an empty "<speak></speak>"
     // We manually remove that from here
