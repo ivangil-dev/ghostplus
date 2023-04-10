@@ -1,4 +1,5 @@
 const { enviar } = require('../poderes/contacto');
+const axios = require('axios');
 
 // Crear mocks para transporte.sendMail y axios.post
 const transporte = { sendMail: jest.fn()};

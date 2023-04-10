@@ -57,7 +57,7 @@ async function renewAccessToken(currentAccessToken, tokenInfo) {
     };
     return newAccessTokenInfo;
   } catch (error) {
-    console.error('Error al renovar el token de acceso:', error.message);
+    console.log('Error al renovar el token de acceso:', error.message);
     throw error;
   }
 }

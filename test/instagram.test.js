@@ -1,12 +1,25 @@
 require('dotenv').config({ path: '.env.test' });
 
 const 
-  { extraerDatos, getAccessToken, renewAccessToken } = require('../poderes/Instagram'),
   axios = require('axios'),
   moment = require('moment'),
-  { MongoClient } = require('mongodb');
+  
+  { MongoMemoryServer } = require('mongodb-memory-server'),
+  { MongoClient } = require('mongodb'),
+  { extraerDatos, getAccessToken, renewAccessToken } = require('../poderes/Instagram');
+
+  const { USUARIOBD, CONTRABD, SERVIDORBD, NOMBRE_BD } = process.env;
+const encodedUsername = encodeURIComponent(USUARIOBD);
+const encodedPassword = encodeURIComponent(CONTRABD);
+const MONGODB_URI = `mongodb+srv://${encodedUsername}:${encodedPassword}@${SERVIDORBD}?retryWrites=true&w=majority`;
+const ACCESS_TOKEN_EXPIRATION_THRESHOLD = 864000; //10 días
 
   jest.mock('axios');
+  jest.mock('moment', () => {
+    const moment = jest.requireActual('moment');
+    moment.prototype.format = jest.fn();
+    return moment;
+  });
   jest.mock('mongodb', () => {
     const mClient = {
       connect: jest.fn(),
@@ -18,10 +31,11 @@ const
     };
     return { MongoClient: jest.fn(() => mClient) };
   });
-  jest.mock("../poderes/instagram", () => {
+  jest.mock("../poderes/Instagram", () => {
     return {
-      extraerDatos: jest.requireActual("../poderes/instagram").extraerDatos,
+      extraerDatos: jest.requireActual("../poderes/Instagram").extraerDatos,
       getAccessToken: jest.fn(),
+      renewAccessToken: jest.requireActual("../poderes/Instagram").renewAccessToken,
     };
   });
 
@@ -60,15 +74,36 @@ describe('Función extraerDatos()', () => {
   });
 });
 
-
-
-
-
-jest.mock('axios');
-
 describe('Función renewAccessToken()', () => {
+
+  let client;
+  let db;
+  let mongod;
+  
+  
+  beforeAll(async () => {
+    mongod = new MongoMemoryServer({});
+    const uri = await mongod.start();
+    client = await MongoClient.connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    db = client.db();
+  });
+
+  afterAll(async () => {
+    await client.close();
+    await mongod.stop();
+  });
+  
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  jest.mock('axios');
+    
   it('Renueva y guarda el nuevo token de acceso en la base de datos', async () => {
-    const mockAccessToken = 'mockAccessToken';
+    const mockAccessToken = '1234567890';
     const mockTokenInfo = {
       access_token: 'oldAccessToken',
       token_type: 'bearer',
@@ -97,22 +132,21 @@ describe('Función renewAccessToken()', () => {
     });
 
     // Simular el comportamiento de moment().format() al llamar a renewAccessToken
-    jest.spyOn(moment, 'format').mockImplementation(() => {
-      if (moment.format.mock.calls.length === 1) {
+    jest.spyOn(moment.prototype, 'format').mockImplementation(() => {
+      if (moment.prototype.format.mock.calls.length === 1) {
         return mockNewAccessTokenInfo.FechaSol;
       } else {
         return mockNewAccessTokenInfo.FechaFin;
       }
     });
-
-    // Ejecutar la función renewAccessToken
-    const newAccessTokenInfo = await renewAccessToken(mockAccessToken, mockTokenInfo);
+    const newAccessTokenInfo = await renewAccessToken(mockTokenInfo.access_token, mockTokenInfo, db);
 
     // Verificar que se haya llamado a axios.get con los parámetros correctos
-    expect(axios.get).toHaveBeenCalledWith(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${mockAccessToken}`);
+    expect(axios.get).toHaveBeenCalledWith(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${mockTokenInfo.access_token}`);
 
     // Verificar que se haya actualizado el token de acceso en la base de datos
-    expect(MongoClient.prototype.updateOne).toHaveBeenCalledWith({}, { $set: mockNewAccessTokenInfo });
+    const updatedTokenInfo = await db.collection('tokens').findOne({});
+    expect(updatedTokenInfo).toEqual(mockNewAccessTokenInfo);
 
     // Verificar que la función devuelva la información del nuevo token de acceso
     expect(newAccessTokenInfo).toEqual(mockNewAccessTokenInfo);
@@ -123,6 +157,6 @@ describe('Función renewAccessToken()', () => {
     axios.get.mockRejectedValue(new Error('Error al renovar el token de acceso'));
 
     // Ejecutar la función renewAccessToken y verificar que se lance un error
-    await expect(renewAccessToken('mockAccessToken', {})).rejects.toThrow('Error al renovar el token de acceso');
+    await expect(renewAccessToken(getAccessToken, {})).rejects.toThrow('Error al renovar el token de acceso');
   });
 });
